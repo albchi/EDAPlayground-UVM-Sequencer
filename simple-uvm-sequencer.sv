@@ -1,3 +1,27 @@
+/*
+
+  A simple example of UVM creating sequences.
+  
+  Here is the basic UVM class hierachy:
+  
+     Pkt
+     Testcase
+        Sequence
+        Environment
+          Agent
+             Sequencer
+	     Driver
+
+   Run log:
+   
+     Start of UVM - hardwired message 
+     addr                         integral  32    'hdeadbeef                                         
+     addr                         integral  32    'hcafefade                                         
+     addr                         integral  32    'h1234                                             
+     addr                         integral  32    'habcd                                             
+     $finish at simulation time                 3004
+
+*/
 
 import uvm_pkg::*;
 
