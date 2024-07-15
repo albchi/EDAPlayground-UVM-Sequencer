@@ -1,56 +1,25 @@
+
 import uvm_pkg::*;
 
 
 class Pkt extends uvm_sequence_item;
   
   
-  rand reg [31:0] saddr;
-  rand reg [31:0] daddr;
+  rand reg [31:0] addr;
   rand reg [31:0] data;
   rand reg [3:0] cmd;
   rand reg rw_;
-  rand integer hold_len;
   
   `uvm_object_utils_begin(Pkt)
-    `uvm_field_int(saddr, UVM_DEFAULT)
-    `uvm_field_int(daddr, UVM_DEFAULT)
- 	`uvm_field_int(data, UVM_DEFAULT)
+    `uvm_field_int(addr, UVM_DEFAULT)
+    `uvm_field_int(data, UVM_DEFAULT)
+	`uvm_field_int(cmd, UVM_DEFAULT)
+     `uvm_field_int(rw_, UVM_DEFAULT)
   `uvm_object_utils_end
-  constraint cons_basic {
-  	saddr > 32'h0;
-    saddr < 32'h7999;
-    daddr > 32'h8000;
-    daddr < 32'hFFFF;
-  }
-endclass
-
-class Pkt2 extends Pkt;
-  rand reg [3:0] prio;
-  `uvm_object_utils_begin(Pkt2)
-  	`uvm_field_int(prio, UVM_DEFAULT)
-  `uvm_object_utils_end
-  constraint cons_lower_band {
-  	saddr > 32'h0000;
-    saddr < 32'h0FFF;
-    daddr > 32'h8000;
-    daddr < 32'h8FFF;
-  }
 
 endclass
 
-class Pkt3 extends Pkt2;
-  rand reg [15:0] channel;
-  `uvm_object_utils_begin(Pkt3)
-  	`uvm_field_int(channel, UVM_DEFAULT)
-  `uvm_object_utils_end
-  constraint cons_mid_band {
-  	saddr > 32'h4000;
-    saddr < 32'h4FFF;
-    daddr > 32'hA000;
-    daddr < 32'hAFFF;
-  }
 
-endclass
 
 class Seq_Pkt extends uvm_sequence #(Pkt);
 
@@ -61,24 +30,19 @@ class Seq_Pkt extends uvm_sequence #(Pkt);
 
           `uvm_info("XAC", "SEQ_PKT::body(), going to do uvm_do_with for the 1st time", UVM_HIGH);
 
-	      `uvm_do_with(req, {cmd == 4'h0; hold_len < 5; saddr == 32'hdeadbeef; rw_== 0;})
-    	  `uvm_do_with(req, {cmd == 4'h1; hold_len > 5; hold_len < 8; saddr == 32'hcafefade; rw_== 0;})
-
-	      `uvm_do_with(req, {cmd == 4'h2; saddr == 32'hb00bd00d; daddr == 888; rw_== 0;})
-    	  `uvm_do_with(req, {cmd == 4'h3; saddr == 32'hac00001; daddr == 888; rw_== 1;})       
-
-          `uvm_info("XAC", "in sequence body, after 1st uvm_do_with ", UVM_HIGH);
-
-	      `uvm_do_with(req, {cmd == 4'h4; saddr == 32'h2222; daddr == 32'hcafe;})
-    	  `uvm_do_with(req, {cmd == 4'h5; saddr == 32'h3333; daddr == 32'hbeef;})
-	      `uvm_do_with(req, {cmd == 4'h6; saddr == 32'h4444; daddr == 32'hfeed;})
-	      `uvm_do_with(req, {cmd == 4'h7; saddr == 32'h5555; daddr == 32'hfade;})
+	      `uvm_do_with(req, {addr == 32'hdeadbeef;})
+	      `uvm_do_with(req, {addr == 32'hcafefade;})
 
            req = Pkt::type_id::create("req");
            start_item(req);
            req.cmd = 4;
-           req.daddr = 32'haaaa;
-           req.saddr = 4;
+           req.addr = 32'h1234;
+           finish_item(req);
+
+           req = Pkt::type_id::create("req");
+           start_item(req);
+           req.cmd = 4;
+           req.addr = 32'habcd;
            finish_item(req);
 
     endtask
@@ -113,7 +77,9 @@ class Drv_pkt extends uvm_driver#(Pkt);
     virtual task run_phase(uvm_phase phase);
 
         forever begin 
+          `uvm_info("CMD Driver", "waiting for get_next_item", UVM_HIGH);
             seq_item_port.get_next_item(req);
+          	#1;
 	 	   `uvm_info("CMD Driver", req.sprint(), UVM_HIGH);
 			seq_item_port.item_done();
         end // forever
@@ -184,7 +150,7 @@ class Testcase1 extends uvm_test;
    virtual function void build_phase(uvm_phase phase);
 
      super.build_phase(phase);
-   
+     seq_pkt_0 = Seq_Pkt::type_id::create("seq_pkt_0", this);
      env_0 = Env::type_id::create("env_0", this);
      uvm_config_db#(int)::set(this, "*", "lor", len_of_rst);
     
@@ -193,6 +159,7 @@ class Testcase1 extends uvm_test;
 
    virtual function void connect_phase(uvm_phase phase);
       super.connect_phase(phase);
+      // seq_pkt_0 = env_0.agent_pkt_0.seqr_pkt_0;
    endfunction // connect_phase
 
    
@@ -207,8 +174,9 @@ class Testcase1 extends uvm_test;
     uvm_objection objection;
     
     super.main_phase(phase) ;
-	seq_pkt_0.start(env_0.agent_pkt_0.seqr_pkt_0);
+	// seq_pkt_0.start(env_0.agent_pkt_0.seqr_pkt_0);
     phase.raise_objection(this);
+ 	seq_pkt_0.start(env_0.agent_pkt_0.seqr_pkt_0);
     objection=phase.get_objection();
     objection.set_drain_time(this, 3us); // $finish at simulation time 100    
     phase.drop_objection(this);
