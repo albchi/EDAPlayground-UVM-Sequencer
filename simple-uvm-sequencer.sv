@@ -18,8 +18,9 @@
      addr                         integral  32    'hdeadbeef                                         
      addr                         integral  32    'hcafefade                                         
      addr                         integral  32    'h1234                                             
-     addr                         integral  32    'habcd                                             
-     $finish at simulation time                 3004
+     addr                         integral  32    'habcd 
+     $finish called from file "/apps/vcsmx/vcs/U-2023.03-SP2//etc/uvm-1.1/src/base/uvm_root.svh", line 437.
+     $finish at simulation time                 3048
 
 */
 
@@ -35,9 +36,9 @@ class Pkt extends uvm_sequence_item;
   rand reg rw_;
   
   `uvm_object_utils_begin(Pkt)
-    `uvm_field_int(addr, UVM_DEFAULT)
-    `uvm_field_int(data, UVM_DEFAULT)
-	`uvm_field_int(cmd, UVM_DEFAULT)
+     `uvm_field_int(addr, UVM_DEFAULT)
+     `uvm_field_int(data, UVM_DEFAULT)
+     `uvm_field_int(cmd, UVM_DEFAULT)
      `uvm_field_int(rw_, UVM_DEFAULT)
   `uvm_object_utils_end
 
@@ -47,8 +48,7 @@ endclass
 
 class Seq_Pkt extends uvm_sequence #(Pkt);
 
-
-  `uvm_object_utils(Seq_Pkt)
+    `uvm_object_utils(Seq_Pkt)
 
     virtual task body();
 
@@ -82,11 +82,8 @@ class Seq_Pkt extends uvm_sequence #(Pkt);
        `uvm_info("XAC", "seq_pkt::post_start", UVM_HIGH);
         if  ( starting_phase != null )
             starting_phase.drop_objection( this );
-
     endtask : post_start
 
-
-  
 endclass
 
 class Drv_pkt extends uvm_driver#(Pkt);
@@ -101,11 +98,11 @@ class Drv_pkt extends uvm_driver#(Pkt);
     virtual task run_phase(uvm_phase phase);
 
         forever begin 
-          `uvm_info("CMD Driver", "waiting for get_next_item", UVM_HIGH);
-            seq_item_port.get_next_item(req);
-          	#1;
-	 	   `uvm_info("CMD Driver", req.sprint(), UVM_HIGH);
-			seq_item_port.item_done();
+           `uvm_info("CMD Driver", "waiting for get_next_item", UVM_HIGH);
+           seq_item_port.get_next_item(req);
+           #1;
+	   `uvm_info("CMD Driver", req.sprint(), UVM_HIGH);
+	   seq_item_port.item_done();
         end // forever
     endtask // run_phase
 
