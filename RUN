@@ -1,0 +1,1 @@
+simv -l simv.log +UVM_VERBOSITY=UVM_HIGH
